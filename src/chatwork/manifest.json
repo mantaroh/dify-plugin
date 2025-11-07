@@ -1,21 +1,21 @@
 {
-  "name": "chartwork-room-messenger",
+  "name": "chatwork-room-messenger",
   "version": "0.1.0",
-  "title": "Chartwork Room Messenger",
-  "description": "Chartwork ルームにメッセージを送信するアクションプラグインです。",
+  "title": "Chatwork Room Messenger",
+  "description": "Chatwork ルームにメッセージを送信するアクションプラグインです。",
   "author": "dify-plugin contributors",
   "type": "action",
-  "tags": ["notification", "chartwork", "chat"],
+  "tags": ["notification", "chatwork", "chat"],
   "config": {
     "auth": {
       "type": "custom",
       "fields": [
         {
           "id": "apiToken",
-          "label": "Chartwork API Token",
+          "label": "Chatwork API Token",
           "type": "secret",
           "required": true,
-          "description": "Chartwork の個人設定から発行した API トークンを入力します。"
+          "description": "Chatwork の個人設定から発行した API トークンを入力します。"
         }
       ]
     },
@@ -25,7 +25,7 @@
         "label": "Default Room ID",
         "type": "string",
         "required": false,
-        "description": "roomId を省略した場合に利用する Chartwork ルーム ID。"
+        "description": "roomId を省略した場合に利用する Chatwork ルーム ID。"
       },
       {
         "id": "baseUrl",
@@ -33,7 +33,7 @@
         "type": "string",
         "required": false,
         "defaultValue": "https://api.chatwork.com/v2",
-        "description": "Chartwork API のベース URL。オンプレミス版を利用する場合に指定します。"
+        "description": "Chatwork API のベース URL。オンプレミス版を利用する場合に指定します。"
       }
     ]
   },
@@ -41,14 +41,14 @@
     {
       "name": "postRoomMessage",
       "title": "Post message to room",
-      "description": "Chartwork ルームにメッセージを投稿します。",
+      "description": "Chatwork ルームにメッセージを投稿します。",
       "input": {
         "type": "object",
         "required": ["message"],
         "properties": {
           "roomId": {
             "type": "string",
-            "description": "メッセージを送る Chartwork ルーム ID。未指定時は設定値を利用します。"
+            "description": "メッセージを送る Chatwork ルーム ID。未指定時は設定値を利用します。"
           },
           "message": {
             "type": "string",
@@ -69,7 +69,7 @@
         "properties": {
           "messageId": {
             "type": "string",
-            "description": "Chartwork が発行したメッセージ ID"
+          "description": "Chatwork が発行したメッセージ ID"
           },
           "roomId": {
             "type": "string",

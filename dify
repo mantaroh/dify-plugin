@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+const { runCli: runPackageCli } = require('./scripts/package-plugin');
+
+function printUsage() {
+  console.error(`使用方法:\n  ./dify plugin package [--all | <plugin path> ...]`);
+}
+
+async function handlePluginCommand(args) {
+  const subcommand = args.shift();
+  if (subcommand !== 'package') {
+    throw new Error(`未対応のサブコマンドです: plugin ${subcommand || '(未指定)'}`);
+  }
+
+  const cleanedArgs = args.filter((arg) => arg !== '--');
+  return runPackageCli(cleanedArgs);
+}
+
+async function main(argv = process.argv.slice(2)) {
+  if (argv.length === 0) {
+    printUsage();
+    process.exit(1);
+  }
+
+  const command = argv.shift();
+  try {
+    switch (command) {
+      case 'plugin':
+        await handlePluginCommand(argv);
+        break;
+      default:
+        throw new Error(`未対応のコマンドです: ${command}`);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`❌ ${error.message}`);
+    } else {
+      console.error('❌ 不明なエラーが発生しました。');
+    }
+    process.exit(1);
+  }
+}
+
+main();
