@@ -21,5 +21,5 @@ npm run package -- <pluginName>
 
 ## GitHub Actions での配布
 
-`main` ブランチへの push や `v*` タグの push、もしくは手動実行 (`workflow_dispatch`) をトリガーとして GitHub Actions が `npm run package -- --all` を実行し、`dist/` 以下に生成された Zip ファイルを成果物としてアップロードします。手動実行時は入力欄にスペース区切りのプラグイン名を指定すると、そのプラグインのみをパッケージ化できます。
+`main` ブランチへの push や `v*` タグの push、もしくは手動実行 (`workflow_dispatch`) をトリガーとして GitHub Actions が `npm run package -- --all` を実行し、`dist/` 以下に生成された Zip ファイルを成果物としてアップロードします。手動実行時は入力欄にスペース区切りのプラグイン名を指定すると、そのプラグインのみをパッケージ化できます。`v*` タグから実行した場合は生成した Zip を GitHub Release に添付するため、ローカルの Dify 環境へ配布する際はリリースページからダウンロードできます。
 
