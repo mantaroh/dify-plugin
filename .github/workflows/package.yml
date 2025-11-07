@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       plugin:
-        description: 'スペース区切りでパッケージ化するプラグイン名を指定します (未指定の場合は全て)'
+        description: 'スペース区切りでパッケージ化するプラグインディレクトリ (または src 配下名) を指定します (未指定の場合は全て)'
         required: false
 
 jobs:
@@ -37,9 +37,9 @@ jobs:
           PLUGIN_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.plugin || '' }}
         run: |
           if [ -n "$PLUGIN_INPUT" ]; then
-            npm run package -- $PLUGIN_INPUT
+            ./dify plugin package $PLUGIN_INPUT
           else
-            npm run package -- --all
+            ./dify plugin package --all
           fi
 
       - name: Upload distribution artifacts

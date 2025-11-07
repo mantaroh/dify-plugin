@@ -8,4 +8,5 @@
 
 
 ## プラグイン一覧
-- `chartwork/` Chartwork Room Messenger プラグイン。Chartwork API を利用してルームへメッセージを投稿します。
+- `chatwork/` Chatwork Room Messenger プラグイン。Chatwork API を利用してルームへメッセージを投稿します。
+- `hello_world/` HelloWorld ツールプラグイン。指定した名前に挨拶するチュートリアル実装です。

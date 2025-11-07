@@ -1,4 +1,4 @@
-"""Chartwork Room Messenger プラグイン (Python 実装)."""
+"""Chatwork Room Messenger プラグイン (Python 実装)."""
 from __future__ import annotations
 
 import json
@@ -31,8 +31,8 @@ class AuthenticationError(Exception):
         self.response_body = response_body
 
 
-class ChartworkAPIError(Exception):
-    """Chartwork API へのアクセスでエラーが発生した場合に送出される例外。"""
+class ChatworkAPIError(Exception):
+    """Chatwork API へのアクセスでエラーが発生した場合に送出される例外。"""
 
     def __init__(self, message: str, status: Optional[int], response_body: Any) -> None:
         super().__init__(message)
@@ -50,8 +50,8 @@ class _Response:
         return 200 <= self.status < 300
 
 
-class ChartworkClient:
-    """Chartwork API を呼び出すためのクライアント。"""
+class ChatworkClient:
+    """Chatwork API を呼び出すためのクライアント。"""
 
     def __init__(
         self,
@@ -61,7 +61,7 @@ class ChartworkClient:
         request_impl: Optional[Callable[..., _Response]] = None,
     ) -> None:
         if not api_token:
-            raise ValidationError("Chartwork API トークン (apiToken) が設定されていません。")
+            raise ValidationError("Chatwork API トークン (apiToken) が設定されていません。")
 
         self.api_token = api_token
         self.base_url = (base_url or DEFAULT_BASE_URL).rstrip("/")
@@ -79,8 +79,8 @@ class ChartworkClient:
             status = exc.code
             text_bytes = exc.read()
         except urllib.error.URLError as exc:  # pragma: no cover - ネットワーク障害
-            raise ChartworkAPIError(
-                f"Chartwork API への接続に失敗しました: {exc.reason}",
+            raise ChatworkAPIError(
+                f"Chatwork API への接続に失敗しました: {exc.reason}",
                 None,
                 None,
             ) from exc
@@ -111,18 +111,18 @@ class ChartworkClient:
         try:
             payload = json.loads(response.text) if response.text else {}
         except json.JSONDecodeError as exc:
-            raise ChartworkAPIError(
-                f"Chartwork API のレスポンスを JSON として解釈できませんでした: {exc.msg}",
+            raise ChatworkAPIError(
+                f"Chatwork API のレスポンスを JSON として解釈できませんでした: {exc.msg}",
                 response.status,
                 response.text,
             ) from exc
 
         if response.status == 401:
-            raise AuthenticationError("Chartwork API トークンが不正です。", response.status, payload)
+            raise AuthenticationError("Chatwork API トークンが不正です。", response.status, payload)
 
         if not response.ok:
-            raise ChartworkAPIError(
-                f"Chartwork API へのリクエストが失敗しました (status={response.status})",
+            raise ChatworkAPIError(
+                f"Chatwork API へのリクエストが失敗しました (status={response.status})",
                 response.status,
                 payload,
             )
@@ -169,7 +169,7 @@ def post_room_message_action(
     link_urls = bool(inputs.get("linkUrls", False))
 
     logger.debug(
-        "[chartwork] postRoomMessage - preparing request",
+        "[chatwork] postRoomMessage - preparing request",
         extra={
             "roomId": room_id,
             "messageLength": len(message) if isinstance(message, str) else None,
@@ -178,7 +178,7 @@ def post_room_message_action(
         },
     )
 
-    client = ChartworkClient(api_token=api_token, base_url=base_url, request_impl=request_impl)
+    client = ChatworkClient(api_token=api_token, base_url=base_url, request_impl=request_impl)
     payload = build_message_payload(
         message=message,
         self_mention=self_mention,
@@ -196,7 +196,7 @@ def post_room_message_action(
     }
 
     logger.debug(
-        "[chartwork] postRoomMessage - completed",
+        "[chatwork] postRoomMessage - completed",
         extra={
             "messageId": normalized["messageId"],
             "roomId": normalized["roomId"],
@@ -226,11 +226,11 @@ actions = {
 errors = {
     "ValidationError": ValidationError,
     "AuthenticationError": AuthenticationError,
-    "ChartworkAPIError": ChartworkAPIError,
+    "ChatworkAPIError": ChatworkAPIError,
 }
 
 utils = {
-    "ChartworkClient": ChartworkClient,
+    "ChatworkClient": ChatworkClient,
     "buildMessagePayload": build_message_payload,
 }
 
@@ -239,10 +239,10 @@ __all__ = [
     "actions",
     "errors",
     "utils",
-    "ChartworkClient",
+    "ChatworkClient",
     "ValidationError",
     "AuthenticationError",
-    "ChartworkAPIError",
+    "ChatworkAPIError",
     "build_message_payload",
     "post_room_message_action",
 ]

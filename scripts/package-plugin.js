@@ -5,13 +5,15 @@ const { spawn } = require('child_process');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
+const DIST_DIR = path.join(ROOT_DIR, 'dist');
 
 function readManifest(pluginDir) {
   const manifestPath = path.join(pluginDir, 'manifest.json');
   if (!fs.existsSync(manifestPath)) {
     throw new Error(`manifest.json が見つかりません: ${manifestPath}`);
   }
-  return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const content = fs.readFileSync(manifestPath, 'utf8');
+  return JSON.parse(content);
 }
 
 function ensureDirectory(dirPath) {
@@ -21,6 +23,9 @@ function ensureDirectory(dirPath) {
 }
 
 function listPluginDirs() {
+  if (!fs.existsSync(SRC_DIR)) {
+    return [];
+  }
   return fs
     .readdirSync(SRC_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -28,22 +33,29 @@ function listPluginDirs() {
     .sort();
 }
 
-function packagePlugin(pluginName) {
-  const pluginDir = path.join(SRC_DIR, pluginName);
-  if (!fs.existsSync(pluginDir) || !fs.statSync(pluginDir).isDirectory()) {
-    throw new Error(`プラグインディレクトリが存在しません: ${pluginName}`);
+function resolvePluginTarget(target) {
+  if (!target) {
+    throw new Error('パッケージ化対象の指定が空です。');
   }
-
-  const manifest = readManifest(pluginDir);
-  const zipBaseName = `${manifest.name || pluginName}-${manifest.version || '0.0.0'}`;
-  const distDir = path.join(ROOT_DIR, 'dist');
-  ensureDirectory(distDir);
-  const outputPath = path.join(distDir, `${zipBaseName}.zip`);
-
-  if (fs.existsSync(outputPath)) {
-    fs.rmSync(outputPath);
+  const normalized = target.replace(/\/$/, '');
+  const directPath = path.resolve(ROOT_DIR, normalized);
+  if (fs.existsSync(directPath) && fs.statSync(directPath).isDirectory()) {
+    return directPath;
   }
+  const fromSrc = path.join(SRC_DIR, normalized);
+  if (fs.existsSync(fromSrc) && fs.statSync(fromSrc).isDirectory()) {
+    return fromSrc;
+  }
+  throw new Error(`プラグインディレクトリが存在しません: ${target}`);
+}
 
+function buildZipBaseName(manifest, pluginDir) {
+  const manifestName = manifest.name || path.basename(pluginDir);
+  const version = manifest.version || '0.0.0';
+  return `${manifestName}-${version}`;
+}
+
+function runZipCommand(pluginDir, outputPath) {
   return new Promise((resolve, reject) => {
     const zipArgs = ['-r', outputPath, '.'];
     const zipProcess = spawn('zip', zipArgs, {
@@ -57,7 +69,7 @@ function packagePlugin(pluginName) {
 
     zipProcess.on('exit', (code) => {
       if (code === 0) {
-        resolve({ pluginName, outputPath });
+        resolve();
       } else {
         reject(new Error(`zip コマンドが異常終了しました (code=${code})`));
       }
@@ -65,37 +77,84 @@ function packagePlugin(pluginName) {
   });
 }
 
-async function main() {
-  const args = process.argv.slice(2);
+async function packagePlugin(target) {
+  const pluginDir = resolvePluginTarget(target);
+  const manifest = readManifest(pluginDir);
+  const zipBaseName = buildZipBaseName(manifest, pluginDir);
+
+  ensureDirectory(DIST_DIR);
+  const outputPath = path.join(DIST_DIR, `${zipBaseName}.zip`);
+
+  if (fs.existsSync(outputPath)) {
+    fs.rmSync(outputPath);
+  }
+
+  await runZipCommand(pluginDir, outputPath);
+
+  return {
+    target,
+    pluginDir,
+    manifest,
+    outputPath,
+    zipBaseName,
+  };
+}
+
+async function packageMultiple(targets) {
+  const results = [];
+  for (const target of targets) {
+    const result = await packagePlugin(target);
+    results.push(result);
+  }
+  return results;
+}
+
+async function runCli(argv = process.argv.slice(2)) {
+  const args = argv.filter((arg) => arg !== '--');
   const allFlagIndex = args.indexOf('--all');
   let targets;
 
   if (allFlagIndex !== -1) {
     args.splice(allFlagIndex, 1);
+    if (args.length > 0) {
+      throw new Error('--all オプションと個別指定は同時に利用できません。');
+    }
     targets = listPluginDirs();
     if (targets.length === 0) {
-      console.error('パッケージ化対象のプラグインが見つかりません。');
-      process.exit(1);
+      throw new Error('パッケージ化対象のプラグインが見つかりません。');
     }
-  } else if (args.length > 0) {
-    targets = args;
   } else {
-    console.error('使用方法: node scripts/package-plugin.js <pluginName> [...pluginName] または --all');
-    process.exit(1);
+    targets = args;
+    if (targets.length === 0) {
+      throw new Error('パッケージ化するプラグインを指定してください。');
+    }
   }
 
-  for (const pluginName of targets) {
-    try {
-      const result = await packagePlugin(pluginName);
-      console.log(`✅ ${pluginName} をパッケージ化しました: ${path.relative(ROOT_DIR, result.outputPath)}`);
-    } catch (error) {
-      console.error(`❌ ${pluginName} のパッケージ化に失敗しました: ${error.message}`);
-      process.exitCode = 1;
-    }
+  const results = await packageMultiple(targets);
+  for (const { pluginDir, outputPath, zipBaseName } of results) {
+    const relativeDir = path.relative(ROOT_DIR, pluginDir) || '.';
+    const relativeOutput = path.relative(ROOT_DIR, outputPath) || outputPath;
+    console.log(`✅ ${zipBaseName} (${relativeDir}) -> ${relativeOutput}`);
   }
+  return results;
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+module.exports = {
+  ROOT_DIR,
+  SRC_DIR,
+  DIST_DIR,
+  readManifest,
+  ensureDirectory,
+  listPluginDirs,
+  resolvePluginTarget,
+  packagePlugin,
+  packageMultiple,
+  runCli,
+};
+
+if (require.main === module) {
+  runCli().catch((error) => {
+    console.error(`❌ パッケージ化に失敗しました: ${error.message}`);
+    process.exit(1);
+  });
+}
