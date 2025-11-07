@@ -4,7 +4,8 @@
   "description": "このプロジェクトは Dify の自作プラグイン集をまとめたものです。 基本的なプラグインの開発は公式ガイドのプラグイン開発者ガイドラインに従います。",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "node scripts/package-plugin.js"
   },
   "author": "mantaroh",
   "license": "MIT"

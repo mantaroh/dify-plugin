@@ -9,3 +9,13 @@ https://docs.dify.ai/plugin-dev-ja/0312-contributor-covenant-code-of-conduct
 
 - node.js v23 以上
 
+## プラグインのパッケージング
+
+CI で配布できる Zip アーカイブを生成するには、次のコマンドを実行します。
+
+```bash
+npm run package -- <pluginName>
+```
+
+例: Chartwork プラグインをパッケージ化する場合は `npm run package -- chartwork` を実行します。複数のプラグインをまとめて配布したい場合は `npm run package -- --all` を利用してください。生成されたアーカイブは `dist/` ディレクトリに出力されます。
+
