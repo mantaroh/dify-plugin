@@ -1,0 +1,11 @@
+{
+  "name": "dify-plugin",
+  "version": "1.0.0",
+  "description": "このプロジェクトは Dify の自作プラグイン集をまとめたものです。 基本的なプラグインの開発は公式ガイドのプラグイン開発者ガイドラインに従います。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mantaroh",
+  "license": "MIT"
+}
