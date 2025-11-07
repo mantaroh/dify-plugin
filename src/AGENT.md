@@ -8,4 +8,4 @@
 
 
 ## プラグイン一覧
-
+- `chartwork/` Chartwork Room Messenger プラグイン。Chartwork API を利用してルームへメッセージを投稿します。

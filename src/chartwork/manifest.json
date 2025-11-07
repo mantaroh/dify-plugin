@@ -1,0 +1,86 @@
+{
+  "name": "chartwork-room-messenger",
+  "version": "0.1.0",
+  "title": "Chartwork Room Messenger",
+  "description": "Chartwork ルームにメッセージを送信するアクションプラグインです。",
+  "author": "dify-plugin contributors",
+  "type": "action",
+  "tags": ["notification", "chartwork", "chat"],
+  "config": {
+    "auth": {
+      "type": "custom",
+      "fields": [
+        {
+          "id": "apiToken",
+          "label": "Chartwork API Token",
+          "type": "secret",
+          "required": true,
+          "description": "Chartwork の個人設定から発行した API トークンを入力します。"
+        }
+      ]
+    },
+    "settings": [
+      {
+        "id": "defaultRoomId",
+        "label": "Default Room ID",
+        "type": "string",
+        "required": false,
+        "description": "roomId を省略した場合に利用する Chartwork ルーム ID。"
+      },
+      {
+        "id": "baseUrl",
+        "label": "API Base URL",
+        "type": "string",
+        "required": false,
+        "defaultValue": "https://api.chatwork.com/v2",
+        "description": "Chartwork API のベース URL。オンプレミス版を利用する場合に指定します。"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "name": "postRoomMessage",
+      "title": "Post message to room",
+      "description": "Chartwork ルームにメッセージを投稿します。",
+      "input": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "roomId": {
+            "type": "string",
+            "description": "メッセージを送る Chartwork ルーム ID。未指定時は設定値を利用します。"
+          },
+          "message": {
+            "type": "string",
+            "description": "送信するメッセージ本文。"
+          },
+          "selfMention": {
+            "type": "boolean",
+            "description": "true の場合は自分宛メンションを付けて送信します。"
+          },
+          "linkUrls": {
+            "type": "boolean",
+            "description": "true の場合は URL 自動リンクプレフィックス (+) を追加します。"
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "Chartwork が発行したメッセージ ID"
+          },
+          "roomId": {
+            "type": "string",
+            "description": "メッセージを送信したルーム ID"
+          },
+          "postedAt": {
+            "type": "string",
+            "description": "メッセージが投稿された日時 (ISO8601)"
+          }
+        }
+      }
+    }
+  ]
+}
