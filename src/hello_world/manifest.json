@@ -1,0 +1,43 @@
+{
+  "name": "hello-world",
+  "version": "0.1.0",
+  "title": "HelloWorld Tool",
+  "description": "名前を受け取り挨拶を返すチュートリアル用のツールプラグインです。",
+  "author": "dify-plugin contributors",
+  "type": "tool",
+  "tags": ["example", "tutorial", "greeting"],
+  "tools": [
+    {
+      "name": "sayHello",
+      "title": "Say Hello",
+      "description": "指定した名前に挨拶します。",
+      "input": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "挨拶する相手の名前。省略時は \"World\" を利用します。"
+          },
+          "language": {
+            "type": "string",
+            "enum": ["ja", "en"],
+            "description": "挨拶文の言語を指定します。省略時は \"ja\"。"
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "生成された挨拶メッセージ。"
+          },
+          "raw": {
+            "type": "object",
+            "description": "追加情報を含む生データ。"
+          }
+        }
+      }
+    }
+  ]
+}
