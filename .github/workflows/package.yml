@@ -1,0 +1,48 @@
+name: Package plugins
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: 'スペース区切りでパッケージ化するプラグイン名を指定します (未指定の場合は全て)'
+        required: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Clean dist directory
+        run: rm -rf dist
+
+      - name: Package plugins
+        env:
+          PLUGIN_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.plugin || '' }}
+        run: |
+          if [ -n "$PLUGIN_INPUT" ]; then
+            npm run package -- $PLUGIN_INPUT
+          else
+            npm run package -- --all
+          fi
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zips
+          path: dist/*.zip
+          if-no-files-found: error
