@@ -1,57 +1,99 @@
-name: Package plugins
+name: Package Plugin
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
-      plugin:
-        description: 'スペース区切りでパッケージ化するプラグインディレクトリ (または src 配下名) を指定します (未指定の場合は全て)'
+      use_dify_cli:
+        description: "Use official dify CLI to package"
         required: false
+        type: boolean
+        default: true
+      install_dify_cli_command:
+        description: "Command to install dify CLI (optional; leave empty if already installed)"
+        required: false
+        type: string
+        default: ""
+  push:
+    tags:
+      - "v*"
 
 jobs:
-  package:
+  pack_zip:
+    name: Fallback ZIP (dev_cli)
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
+          python-version: '3.11'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Clean dist directory
-        run: rm -rf dist
-
-      - name: Package plugins
-        env:
-          PLUGIN_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.plugin || '' }}
+      - name: Validate manifest
         run: |
-          if [ -n "$PLUGIN_INPUT" ]; then
-            ./dify plugin package $PLUGIN_INPUT
-          else
-            ./dify plugin package --all
-          fi
+          python scripts/dev_cli.py validate
 
-      - name: Upload distribution artifacts
+      - name: Pack (fallback zip)
+        run: |
+          python scripts/dev_cli.py pack
+
+      - name: Upload artifact (fallback zip)
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-zips
-          path: dist/*.zip
-          if-no-files-found: error
+          name: plugin-fallback-zip
+          path: |
+            dist/**
+          if-no-files-found: warn
 
-      - name: Create GitHub release with plugin zips
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+  dify_package:
+    name: Package with dify CLI
+    runs-on: ubuntu-latest
+    needs: pack_zip
+    if: ${{ github.event_name == 'push' || inputs.use_dify_cli == true }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Optionally install dify CLI
+        if: ${{ inputs.install_dify_cli_command != '' }}
+        run: |
+          echo "+ Installing dify CLI with provided command"
+          set -eux
+          ${INPUT_INSTALL_CMD}
+        env:
+          INPUT_INSTALL_CMD: ${{ inputs.install_dify_cli_command }}
+
+      - name: Check dify CLI availability
+        id: check_dify
+        run: |
+          if command -v dify >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package with dify CLI
+        if: steps.check_dify.outputs.found == 'true'
+        run: |
+          set -eux
+          dify plugin package .
+
+      - name: Upload artifact (dify outputs and dist)
+        if: steps.check_dify.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          files: dist/*.zip
-          generate_release_notes: true
+          name: plugin-dify-package
+          path: |
+            dist/**
+            *.zip
+            *.dify*
+            release/**
+          if-no-files-found: warn
+
+      - name: Note when dify CLI is missing
+        if: steps.check_dify.outputs.found != 'true'
+        run: |
+          echo "dify CLI が見つかりません。'install_dify_cli_command' を指定するか、Runner にプリインストールしてください。"
+          echo "fallback ZIP は 'plugin-fallback-zip' アーティファクトとして取得できます。"
+

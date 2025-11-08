@@ -1,0 +1,13 @@
+[project]
+name = "starter-tool-plugin"
+version = "0.1.0"
+description = "A minimal Dify tool plugin scaffold"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Proprietary"}
+authors = [{ name = "your-name" }]
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

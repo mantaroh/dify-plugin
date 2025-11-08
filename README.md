@@ -1,25 +1,37 @@
-## Dify Plugins
+# Dify ツールプラグイン（スターター）
 
-このプロジェクトは Dify の自作プラグイン集をまとめたものです。
-基本的なプラグインの開発は公式ガイドのプラグイン開発者ガイドラインに従います。
+このリポジトリは、Dify の Tool プラグインを作成するための最小構成の雛形です。
 
-https://docs.dify.ai/plugin-dev-ja/0312-contributor-covenant-code-of-conduct
+同梱物
+- `manifest.yaml`：プラグインのメタ情報と実行エントリ（Dify の最新仕様に合わせて調整してください）
+- `src/execute.py`：最小のエントリポイント `execute(inputs, context)` の実装
+- `scripts/dev_cli.py`：開発用の簡易 CLI（`validate` / `invoke` / `pack`）
+- `Makefile`：よく使うコマンドのショートカット
 
-## 技術スタック
+クイックスタート
+- 検証: `python scripts/dev_cli.py validate` もしくは `make validate`
+- 実行: `python scripts/dev_cli.py invoke --input '{"text":"hello"}'` もしくは `make invoke`
+- パッケージ（公式CLI推奨）: `dify plugin package .` もしくは `make package`
+  - 参考: https://docs.dify.ai/plugin-dev-ja/0322-release-by-file
+- フォールバックZip作成: `python scripts/dev_cli.py pack` もしくは `make pack`（成果物は `dist/*.zip`）
 
-- node.js v23 以上
+構成の説明
+- `manifest.yaml`
+  - プラグイン名、表示名、説明、作者、バージョン、タイプ（`tool`）などを定義します。
+  - `runtime.entry` はローカル実行に使うエントリ（例: `src/execute.py:execute`）。公開時は公式ドキュメントの形式に合わせてください。
+- `src/execute.py`
+  - `execute(inputs, context) -> dict` を実装します。
+  - 返り値は `{ "type": "text", "text": "..." }` などの辞書形式を想定しています（実際の仕様に合わせて変更してください）。
+- `scripts/dev_cli.py`
+  - `validate`: `manifest.yaml` の簡易チェック
+  - `invoke`: ローカルで `execute` を JSON 入力で実行
+  - `pack`: `manifest.yaml`/`README.md`/`src/` を ZIP 化して `dist/` に出力
 
-## プラグインのパッケージング
+開発メモ
+- 推奨 Python バージョンは `3.9+`。
+- 仮想環境の利用を推奨します（例: `python -m venv .venv && source .venv/bin/activate`）。
+- 依存が増える場合は `pyproject.toml` の `dependencies` に追加してください。
 
-リポジトリルートに配置している Dify CLI 互換スクリプト `./dify` を利用してプラグインを Zip 化します。
-
-```bash
-./dify plugin package <plugin ディレクトリへのパス>
-```
-
-例: Chatwork プラグインをパッケージ化する場合は `./dify plugin package ./src/chatwork` を実行します。複数のプラグインをまとめて配布したい場合は `./dify plugin package --all` を利用してください。生成されたアーカイブは `dist/` ディレクトリに出力されます。
-
-## GitHub Actions での配布
-
-`main` ブランチへの push や `v*` タグの push、もしくは手動実行 (`workflow_dispatch`) をトリガーとして GitHub Actions が `./dify plugin package --all` を実行し、`dist/` 以下に生成された Zip ファイルを成果物としてアップロードします。手動実行時は入力欄にスペース区切りのパスを指定すると、そのプラグインのみをパッケージ化できます。`v*` タグから実行した場合は生成した Zip を GitHub Release に添付するため、ローカルの Dify 環境へ配布する際はリリースページからダウンロードできます。
-
+注意事項
+- `manifest.yaml` のスキーマは将来的に変わる可能性があります。公開前に必ず公式ドキュメントへ合わせてください。
+ - 配布は基本的に公式の `dify plugin package` コマンドで行うことを推奨します。
