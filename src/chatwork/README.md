@@ -18,6 +18,7 @@ Chatwork Room Messenger プラグインは、API トークンで認証された 
 | ---- | -- | ---- | ---- |
 | `defaultRoomId` | string | 任意 | 指定した場合、このルーム ID がアクションで roomId を省略した際のデフォルトになります。 |
 | `baseUrl` | string | 任意 | Chatwork API のベース URL。オンプレミス環境などを利用する際に上書きします。 |
+| `accountId` | string | 任意 | `selfMention` オプションを利用する際に付与するチャットワークのアカウント ID。 |
 
 ## アクション: `postRoomMessage`
 | パラメータ | 型 | 必須 | 説明 |

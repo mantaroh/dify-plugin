@@ -18,6 +18,38 @@ with _manifest_path.open("r", encoding="utf-8") as f:
 DEFAULT_BASE_URL = "https://api.chatwork.com/v2"
 
 
+@dataclass
+class ChatworkSettings:
+    """チャットワークアクションで利用する設定値を表現するデータクラス。"""
+
+    api_token: str
+    base_url: str = DEFAULT_BASE_URL
+    default_room_id: Optional[str] = None
+    account_id: Optional[str] = None
+
+    @classmethod
+    def from_mapping(cls, data: Mapping[str, Any]) -> "ChatworkSettings":
+        api_token = str(data.get("apiToken", "")).strip()
+        if not api_token:
+            raise ValidationError("Chatwork API トークン (apiToken) が設定されていません。")
+
+        base_url = str(data.get("baseUrl", DEFAULT_BASE_URL)).strip() or DEFAULT_BASE_URL
+        default_room_id = data.get("defaultRoomId")
+        if isinstance(default_room_id, str):
+            default_room_id = default_room_id.strip() or None
+
+        account_id = data.get("accountId")
+        if isinstance(account_id, str):
+            account_id = account_id.strip() or None
+
+        return cls(
+            api_token=api_token,
+            base_url=base_url.rstrip("/"),
+            default_room_id=default_room_id,
+            account_id=account_id,
+        )
+
+
 class ValidationError(Exception):
     """入力値が不正な場合に送出される例外。"""
 
@@ -147,6 +179,21 @@ def build_message_payload(
     return {"body": body}
 
 
+def _normalize_room_id(value: Any) -> str:
+    if value is None:
+        raise ValidationError("roomId が指定されていません。設定の defaultRoomId を確認してください。")
+
+    if isinstance(value, (int, float)):
+        value = str(int(value))
+
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized:
+            return normalized
+
+    raise ValidationError("roomId が指定されていません。設定の defaultRoomId を確認してください。")
+
+
 def post_room_message_action(
     *,
     settings: Optional[Mapping[str, Any]] = None,
@@ -154,16 +201,15 @@ def post_room_message_action(
     logger: Optional[logging.Logger] = None,
     request_impl: Optional[Callable[..., _Response]] = None,
 ) -> Dict[str, Any]:
-    settings = dict(settings or {})
+    raw_settings = dict(settings or {})
     inputs = dict(inputs or {})
     logger = logger or logging.getLogger(__name__)
 
-    api_token = settings.get("apiToken")
-    base_url = settings.get("baseUrl")
-    default_room_id = settings.get("defaultRoomId")
-    account_id = settings.get("accountId")
+    config = ChatworkSettings.from_mapping(raw_settings)
 
-    room_id = inputs.get("roomId") or default_room_id
+    room_id_value = inputs.get("roomId") or config.default_room_id
+    room_id = _normalize_room_id(room_id_value)
+
     message = inputs.get("message")
     self_mention = bool(inputs.get("selfMention", False))
     link_urls = bool(inputs.get("linkUrls", False))
@@ -178,12 +224,16 @@ def post_room_message_action(
         },
     )
 
-    client = ChatworkClient(api_token=api_token, base_url=base_url, request_impl=request_impl)
+    client = ChatworkClient(
+        api_token=config.api_token,
+        base_url=config.base_url,
+        request_impl=request_impl,
+    )
     payload = build_message_payload(
         message=message,
         self_mention=self_mention,
         link_urls=link_urls,
-        account_id=account_id,
+        account_id=config.account_id,
     )
 
     result = client.post_room_message(room_id, payload)
@@ -232,6 +282,7 @@ errors = {
 utils = {
     "ChatworkClient": ChatworkClient,
     "buildMessagePayload": build_message_payload,
+    "ChatworkSettings": ChatworkSettings,
 }
 
 __all__ = [
@@ -240,6 +291,7 @@ __all__ = [
     "errors",
     "utils",
     "ChatworkClient",
+    "ChatworkSettings",
     "ValidationError",
     "AuthenticationError",
     "ChatworkAPIError",
