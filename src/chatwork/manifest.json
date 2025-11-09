@@ -34,6 +34,13 @@
         "required": false,
         "defaultValue": "https://api.chatwork.com/v2",
         "description": "Chatwork API のベース URL。オンプレミス版を利用する場合に指定します。"
+      },
+      {
+        "id": "accountId",
+        "label": "Account ID",
+        "type": "string",
+        "required": false,
+        "description": "自分宛メンションを付ける場合に利用するチャットワークのアカウント ID。"
       }
     ]
   },
