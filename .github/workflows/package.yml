@@ -35,20 +35,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Install Dify Plugin CLI
+        run: |
+          python scripts/install_dify_plugin_cli.py --install-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Package plugin (chatwork)
+        shell: bash
         run: |
-          node scripts/package-plugin.js src/chatwork
+          set -euo pipefail
+          rm -rf dist
+          mkdir -p dist
+          dify plugin package src/chatwork
+          mapfile -t packages < <(find "$PWD" -maxdepth 4 -type f -name '*.difypkg')
+          if [ "${#packages[@]}" -eq 0 ]; then
+            echo "dify plugin package が .difypkg を出力しませんでした" >&2
+            exit 1
+          fi
+          for pkg in "${packages[@]}"; do
+            mv "$pkg" dist/
+          done
+          ls -l dist
 
       - name: Upload packaged artifact
         uses: actions/upload-artifact@v4
         with:
           name: chatwork-plugin-dist
-          path: dist/**
+          path: dist/*.difypkg
           if-no-files-found: error
 
   release:
