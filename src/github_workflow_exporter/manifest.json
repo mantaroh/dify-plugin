@@ -1,0 +1,158 @@
+{
+  "name": "github-workflow-exporter",
+  "version": "0.1.0",
+  "title": "GitHub Workflow Exporter",
+  "description": "Dify ワークフローの DSL を公開時に GitHub へコミットするアクションプラグインです。",
+  "author": "dify-plugin contributors",
+  "type": "action",
+  "tags": ["github", "workflow", "versioning", "export"],
+  "config": {
+    "auth": {
+      "type": "custom",
+      "fields": [
+        {
+          "id": "githubToken",
+          "label": "GitHub Access Token",
+          "type": "secret",
+          "required": true,
+          "description": "contents:write 権限を持つ個人アクセストークンを入力してください。"
+        }
+      ]
+    },
+    "settings": [
+      {
+        "id": "repositoryOwner",
+        "label": "Repository Owner",
+        "type": "string",
+        "required": true,
+        "description": "対象リポジトリのオーナー名 (ユーザー名または org 名)"
+      },
+      {
+        "id": "repositoryName",
+        "label": "Repository Name",
+        "type": "string",
+        "required": true,
+        "description": "対象リポジトリ名"
+      },
+      {
+        "id": "branch",
+        "label": "Branch",
+        "type": "string",
+        "required": false,
+        "defaultValue": "main",
+        "description": "コミットを作成するブランチ名"
+      },
+      {
+        "id": "basePath",
+        "label": "Base Path",
+        "type": "string",
+        "required": false,
+        "defaultValue": "dify/workflows",
+        "description": "DSL を保存するベースディレクトリ"
+      },
+      {
+        "id": "fileExtension",
+        "label": "File Extension",
+        "type": "string",
+        "required": false,
+        "defaultValue": ".json",
+        "description": "保存するファイルの拡張子 (例: .json, .yaml)"
+      },
+      {
+        "id": "commitMessageTemplate",
+        "label": "Commit Message Template",
+        "type": "string",
+        "required": false,
+        "defaultValue": "chore: sync Dify workflow {workflowId}",
+        "description": "ワークフロー情報をもとにコミットメッセージを生成するテンプレート"
+      },
+      {
+        "id": "authorName",
+        "label": "Author Name",
+        "type": "string",
+        "required": false,
+        "description": "コミット署名者名。省略時はトークンのデフォルトを利用します"
+      },
+      {
+        "id": "authorEmail",
+        "label": "Author Email",
+        "type": "string",
+        "required": false,
+        "description": "コミット署名者メールアドレス"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "name": "commitWorkflowDsl",
+      "title": "Commit workflow DSL to GitHub",
+      "description": "公開時のワークフロー DSL を GitHub の指定パスへコミットします。",
+      "input": {
+        "type": "object",
+        "required": ["published", "workflowId", "workflowDsl"],
+        "properties": {
+          "published": {
+            "type": "boolean",
+            "description": "公開イベントの場合に true。false の場合はコミットをスキップします。"
+          },
+          "workflowId": {
+            "type": "string",
+            "description": "ワークフロー ID"
+          },
+          "workflowName": {
+            "type": "string",
+            "description": "ワークフロー名"
+          },
+          "workflowDsl": {
+            "description": "保存対象のワークフロー DSL。JSON 文字列またはオブジェクトを想定します。"
+          },
+          "version": {
+            "type": "string",
+            "description": "公開バージョン (例: v2)"
+          },
+          "path": {
+            "type": "string",
+            "description": "保存先パスを個別指定する場合に利用します"
+          },
+          "commitMessage": {
+            "type": "string",
+            "description": "コミットメッセージを個別指定。設定のテンプレートより優先します"
+          },
+          "branch": {
+            "type": "string",
+            "description": "呼び出しごとに上書きするコミット先ブランチ"
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "committed": {
+            "type": "boolean",
+            "description": "GitHub へコミットを実行したかどうか"
+          },
+          "path": {
+            "type": "string",
+            "description": "保存 (予定) パス"
+          },
+          "branch": {
+            "type": "string",
+            "description": "コミット先ブランチ"
+          },
+          "commitSha": {
+            "type": "string",
+            "description": "成功時のコミット SHA"
+          },
+          "url": {
+            "type": "string",
+            "description": "GitHub 上のファイル URL"
+          },
+          "message": {
+            "type": "string",
+            "description": "スキップ理由や完了メッセージ"
+          }
+        }
+      }
+    }
+  ]
+}
